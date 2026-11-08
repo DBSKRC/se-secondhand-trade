@@ -1,0 +1,117 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #6E2635
+skinparam classBackgroundColor #FAF7F3
+skinparam packageBackgroundColor #FAF7F3
+skinparam roundcorner 10
+title UML类图  核心领域对象与业务服务
+hide circle
+class "账号" as User {
+ - id: UUID
+ - account: String {unique}
+ - passwordHash: String
+ - role: MEMBER | ADMIN
+ + canManage(item): Boolean
+}
+class "商品" as Item {
+ - id: UUID
+ - title: String
+ - description: Text
+ - categoryId: UUID
+ - price: Decimal
+ - condition: String
+ - status: 商品状态
+ - version: Long
+ + submitReview(): void
+ + revise(fields): void
+ + withdraw(): void
+}
+class "商品图片" as Image {
+ - id: UUID
+ - url: String
+ - position: Integer
+}
+class "分类" as Category {
+ - id: UUID
+ - name: String
+}
+class "预约" as Reservation {
+ - id: UUID
+ - priceSnapshot: Decimal {immutable}
+ - itemVersion: Long
+ - status: 预约状态
+ - createdAt: DateTime
+ - updatedAt: DateTime
+ - expiresAt: DateTime
+ - closeReason: String
+ + cancel(): void
+ + accept(): void
+ + reject(reason): void
+ + markDelivered(): void
+ + complete(): void
+}
+class "审核记录" as Review {
+ - id: UUID
+ - decision: String
+ - reason: String
+ - createdAt: DateTime
+}
+class "举报" as Report {
+ - id: UUID
+ - reason: String
+ - status: String
+ - submittedAt: DateTime
+ - result: String
+ + handle(result): void
+}
+class "争议记录" as Dispute {
+ - id: UUID
+ - reason: String
+ - createdAt: DateTime
+ - handlingResult: String
+ + recordResult(text): void
+}
+class "操作日志" as Log {
+ - id: UUID
+ - actorId: UUID [optional]
+ - objectType: String
+ - objectId: UUID
+ - action: String
+ - result: String
+ - beforeState: String
+ - afterState: String
+ - occurredAt: DateTime
+}
+class "交易服务" as TradeService <<service>> {
+ + reserve(itemId, version, price, key): 预约
+ + transition(id, action, expectedState): void
+ - validatePermission(): void
+}
+User "1" -- "0..*" Item : 发布者
+User "1" -- "0..*" Reservation : 买家
+Item "1" -- "0..*" Reservation : 历史预约
+Item "1" *-- "0..*" Image
+Category "1" -- "0..*" Item
+Item "1" -- "0..*" Review
+User "1" -- "0..*" Review : 审核人（管理员）
+User "1" -- "0..*" Report : 举报人
+Item "1" -- "0..*" Report
+Reservation "1" -- "0..*" Dispute
+User "0..1" -- "0..*" Log : 操作者
+TradeService ..> Item
+TradeService ..> Reservation
+TradeService ..> Log
+note bottom of Reservation
+一个商品同一时刻至多一条有效预约。
+历史预约不删除；价格快照不随商品改价更新。
+商品和预约由服务在同一事务中更新。
+end note
+note bottom of User
+普通账号同时扮演买家与卖家。
+账号与密码为原型暂定字段，校内身份验证待确认。
+系统任务日志可无账号，另记录系统操作者标识。
+end note
+@enduml

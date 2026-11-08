@@ -1,0 +1,64 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #6E2635
+skinparam classBackgroundColor #FAF7F3
+skinparam packageBackgroundColor #FAF7F3
+skinparam roundcorner 10
+title UML组件图  分层模块化单体架构
+left to right direction
+package "界面层" {
+ [用户端] as Mobile
+ [管理员后台] as Admin
+}
+package "同一应用进程中的业务层" {
+ [身份与权限] as Auth
+ [商品管理与查询] as Catalog
+ [预约与交易] as Trade
+ [审核与违规处理] as Moderation
+ [统计汇总] as Stats
+ [操作日志] as Audit
+ [超时任务\n可配置，规则待确认] as Job
+}
+package "数据访问层" {
+ [仓储与事务管理] as Repo
+ [图片文件适配器] as Media
+}
+database "关系数据库" as DB
+folder "图片文件存储" as Files
+Mobile --> Auth
+Admin --> Auth
+Mobile --> Catalog
+Mobile --> Trade
+Mobile --> Moderation : 提交举报或争议
+Admin --> Moderation
+Admin --> Stats
+Admin --> Audit : 查询
+Mobile --> Stats : 卖家本人统计
+Moderation --> Trade : 冻结联动
+Moderation --> Catalog : 审核与冻结
+Trade --> Catalog : 校验与状态同步
+Job --> Trade : 超时关闭
+Catalog --> Audit
+Trade --> Audit
+Moderation --> Audit
+Auth --> Audit
+Catalog --> Repo
+Trade --> Repo
+Moderation --> Repo
+Stats --> Repo
+Audit --> Repo
+Catalog --> Media
+Repo --> DB
+Media --> Files
+note bottom of Auth
+每个受保护请求均校验身份、角色和资源归属；
+业务服务另校验当前状态，不依赖界面隐藏按钮。
+end note
+note bottom of Repo
+商品、预约与成功操作日志使用同一事务。
+共享数据库便于原子更新；不引入分布式事务。
+end note
+@enduml

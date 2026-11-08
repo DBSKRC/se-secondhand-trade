@@ -1,0 +1,45 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #6E2635
+skinparam classBackgroundColor #FAF7F3
+skinparam packageBackgroundColor #FAF7F3
+skinparam roundcorner 10
+title UML状态图  商品的九种状态
+hide empty description
+state "草稿" as Draft
+state "待审核" as Pending
+state "审核驳回" as Rejected
+state "已发布" as Published
+state "已预约" as Reserved
+state "交易中" as Trading
+state "已完成" as Completed
+state "已下架" as Withdrawn
+state "违规冻结" as Frozen
+[*] --> Draft : 保存
+Draft --> Pending : 提交审核
+Pending --> Published : 审核通过
+Pending --> Rejected : 驳回并记录原因
+Rejected --> Pending : 修改并重新提交
+Published --> Pending : 修改标题/分类/价格/主要描述\n[重审范围其余部分待确认]
+Published --> Reserved : 成功预约\n[同一事务建立有效预约]
+Reserved --> Published : 买家取消/卖家拒绝/超时关闭\n[同步终止有效预约]
+Reserved --> Trading : 卖家确认
+Trading --> Completed : 买家确认完成
+Published --> Withdrawn : 卖家主动下架/管理员下架
+Published --> Frozen : 管理员冻结
+Reserved --> Frozen : 冻结并取消待确认预约\n[暂定规则]
+Trading --> Frozen : 冻结并将预约转待管理员处理\n[暂定规则，需求前置条件存在冲突]
+Completed --> [*]
+note bottom of Trading
+卖家标记已交付不改变商品状态。
+买家提出争议时商品仍为交易中。
+end note
+note bottom of Frozen
+冻结恢复、下架后的重新上架规则待确认，不绘制出口。
+已预约与交易中不能由卖家修改价格或下架。
+冻结与取消同时发生时，取消不得覆盖冻结为已发布。
+end note
+@enduml

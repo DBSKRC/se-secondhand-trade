@@ -1,0 +1,42 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #6E2635
+skinparam classBackgroundColor #FAF7F3
+skinparam packageBackgroundColor #FAF7F3
+skinparam roundcorner 10
+title UML状态图  预约与商品联动
+hide empty description
+state "待卖家确认" as Wait
+state "交易中" as Trading
+state "待买家确认" as Delivery
+state "已完成" as Completed
+state "已取消" as Cancelled
+state "已拒绝" as Rejected
+state "待管理员处理" as Disputed
+[*] --> Wait : 预约成功 / 商品已预约
+Wait --> Trading : 卖家确认 / 商品交易中
+Wait --> Cancelled : 买家取消 / 商品已发布
+Wait --> Cancelled : 超时关闭 / 商品已发布\n[时限可配，24小时待确认]
+Wait --> Cancelled : 管理员冻结 / 商品违规冻结\n[暂定]
+Wait --> Rejected : 卖家拒绝并说明原因 / 商品已发布
+Trading --> Delivery : 卖家标记交付 / 商品仍为交易中
+Delivery --> Completed : 买家确认 / 商品已完成
+Delivery --> Disputed : 买家提争议 / 商品仍为交易中
+Trading --> Disputed : 管理员冻结 / 商品违规冻结 [暂定]
+Delivery --> Disputed : 管理员冻结 / 商品违规冻结 [暂定]
+Completed --> [*]
+Cancelled --> [*]
+Rejected --> [*]
+note bottom of Disputed
+管理员可记录处理结果；强制结束与状态出口待确认。
+记录不得删除，不自动恢复商品可预约。
+end note
+note bottom of Wait
+所有边均检查操作者权限和当前状态，
+商品与预约状态在同一数据库事务内联动。
+取消与接受并发时只允许先满足条件的操作成功。
+end note
+@enduml

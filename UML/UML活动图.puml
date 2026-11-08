@@ -1,0 +1,79 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #6E2635
+skinparam classBackgroundColor #FAF7F3
+skinparam packageBackgroundColor #FAF7F3
+skinparam roundcorner 10
+title UML活动图  发布审核至线下交易完成
+start
+partition 卖家 {
+ :填写商品并保存草稿;
+ :提交审核;
+}
+partition 管理员 {
+ :检查商品内容;
+}
+while (审核通过？) is (否)
+ partition 管理员 {
+  :填写驳回原因;
+ }
+ partition 卖家 {
+  :查看原因并修改;
+  :重新提交审核;
+ }
+ partition 管理员 {
+  :再次审核;
+ }
+endwhile (是)
+:商品变为已发布;
+partition 买家 {
+ :浏览详情并确认当前价格;
+ :发起预约;
+}
+partition 系统 {
+ :校验身份、状态、版本、幂等键;
+ if (可创建预约？) then (是)
+  :同一事务保存价格快照、预约、\n商品已预约状态和操作日志;
+ else (否)
+  :提示已有预约、状态变化或刷新确认;
+  stop
+ endif
+}
+partition 卖家 {
+ if (接受预约？) then (是)
+  :确认预约，商品与预约进入交易中;
+ else (否)
+  :拒绝并填写原因;
+  :事务内关闭预约并恢复商品已发布;
+  stop
+ endif
+ :线下自行联系与交付;
+ :标记已交付;
+}
+:预约为待买家确认，商品仍为交易中;
+partition 买家 {
+ if (确认完成？) then (是)
+  :确认完成;
+  :事务内将商品与预约均改为已完成;
+ else (争议)
+  :提交争议原因;
+  :预约进入待管理员处理，商品保持交易中;
+ endif
+}
+partition 管理员 {
+ if (有争议？) then (是)
+  :介入并记录处理结果，保留交易记录;
+  note right
+   强制结案与后续状态出口待确认。
+  end note
+ endif
+}
+stop
+note left
+取消、超时、冻结分支详见两张状态图。
+本图聚焦主要发布与交易路径。
+end note
+@enduml

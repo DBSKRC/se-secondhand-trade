@@ -1,0 +1,10 @@
+构建/plantuml.jar
+构建/qa/
+构建/__pycache__/
+*.zip
+
+# 实验报告仅保存在本地，不进入Git
+*.pdf
+报告LaTeX/
+实验报告*.tex
+实验报告*.md

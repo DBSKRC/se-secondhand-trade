@@ -1,0 +1,63 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #6E2635
+skinparam classBackgroundColor #FAF7F3
+skinparam packageBackgroundColor #FAF7F3
+skinparam roundcorner 10
+title UML用例图  用户角色与功能范围
+left to right direction
+actor 游客 as Guest
+actor 普通用户 as Member
+actor 买家 as Buyer
+actor 卖家 as Seller
+actor 管理员 as Admin
+actor "超时调度器\n规则待确认" as Timer
+Member <|-- Buyer
+Member <|-- Seller
+rectangle "校园二手交易系统" {
+ usecase "浏览与组合查询商品" as Browse
+ usecase "注册与登录" as Login
+ usecase "保存草稿与提交审核" as Publish
+ usecase "修改或下架本人商品" as Edit
+ usecase "预约商品与查看预约" as Reserve
+ usecase "取消本人待确认预约" as Cancel
+ usecase "接受或拒绝预约" as Accept
+ usecase "标记线下交付" as Deliver
+ usecase "确认完成或提出争议" as Complete
+ usecase "举报商品" as Report
+ usecase "本人商品与交易统计" as OwnStats
+ usecase "审核商品与记录原因" as Review
+ usecase "下架或冻结违规商品" as Freeze
+ usecase "处理举报与记录争议结果" as Handle
+ usecase "查询统计与操作日志" as Audit
+ usecase "关闭超时待确认预约" as Expire
+}
+Guest --> Browse
+Guest --> Login
+Member --> Browse
+Member --> Report
+Buyer --> Reserve
+Buyer --> Cancel
+Buyer --> Complete
+Seller --> Publish
+Seller --> Edit
+Seller --> Accept
+Seller --> Deliver
+Seller --> OwnStats
+Admin --> Review
+Admin --> Freeze
+Admin --> Handle
+Admin --> Audit
+Timer --> Expire
+note bottom of Member
+买家和卖家为同一普通账号的业务身份。
+受保护用例要求登录，不将登录画为每次操作必执行的 include。
+end note
+note bottom of Handle
+只记录争议处理结果；不支持强制结案。
+不提供支付、物流、站内聊天或申诉用例。
+end note
+@enduml

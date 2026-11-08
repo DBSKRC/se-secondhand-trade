@@ -1,0 +1,63 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #6E2635
+skinparam classBackgroundColor #FAF7F3
+skinparam packageBackgroundColor #FAF7F3
+skinparam roundcorner 10
+title UML时序图  创建预约及并发一致性
+actor 买家 as Buyer
+boundary 商品详情页 as UI
+control 交易服务 as Service
+control 权限服务 as Auth
+database 关系数据库 as DB
+Buyer -> UI : 确认页面展示的价格
+UI -> Service : reserve(itemId, expectedVersion,\nexpectedPrice, requestKey)
+Service -> Auth : 校验登录身份与普通用户权限
+Auth --> Service : 当前买家身份
+alt 未登录或无权限
+ Service --> UI : 拒绝并提示登录/无权操作
+else 身份允许
+ Service -> DB : BEGIN；占用唯一键(userId, operation, requestKey)\n并核对请求内容摘要
+ alt 同键同内容已完成
+  DB --> Service : 返回已存响应（等待并发同键事务结束）
+  Service -> DB : 结束只读/重复请求事务
+  Service --> UI : 返回原结果，不重复执行业务
+ else 同键不同内容
+  Service -> DB : ROLLBACK
+  Service --> UI : 请求键冲突，拒绝复用
+ else 新请求
+  Service -> DB : SELECT 商品 FOR UPDATE
+  DB --> Service : 锁定后最新状态、价格和版本
+  Service -> DB : 查询同买家同商品有效预约
+  alt 已有本人有效预约
+   Service -> DB : 保存本次请求响应；COMMIT
+   Service --> UI : 返回已有预约，引导查看
+  else 非已发布或有效预约已被他人持有
+   Service -> DB : ROLLBACK
+   Service --> UI : 商品不可预约，请刷新
+  else 版本或价格与确认值不符
+   Service -> DB : ROLLBACK
+   Service --> UI : 信息已更新，请刷新并重新确认价格
+  else 当前商品可预约且确认值一致
+   Service -> DB : 写预约及不可变价格快照\n写有效预约唯一占用(itemId)\n商品改已预约并递增version\n写操作日志及幂等响应
+   alt 所有写入成功
+    Service -> DB : COMMIT
+    Service --> UI : 预约成功，返回预约编号
+   else 任一写入失败
+    Service -> DB : ROLLBACK（全部撤销）
+    Service --> UI : 明确失败原因，允许安全重试
+   end
+  end
+ end
+end
+UI --> Buyer : 展示结果与下一步操作
+note over Service, DB
+其他买家竞争同一商品行锁，获锁后重读最新状态，最多一人成功。
+有效预约占用与历史预约分开保存，结束时释放占用而保留历史。
+失败请求重试重新校验；成功响应与业务数据同事务持久化。
+价格与版本比较是落实REQ-010/023的暂定交互设计，需最终审阅。
+end note
+@enduml
