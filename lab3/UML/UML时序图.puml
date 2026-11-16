@@ -1,0 +1,66 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 16
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam ArrowColor #82515F
+skinparam LineColor #CBB7BA
+skinparam BorderColor #CBB7BA
+skinparam FontColor #382A30
+skinparam classBackgroundColor #FFFCF8
+skinparam classHeaderBackgroundColor #EFDFE2
+skinparam classBorderColor #B9939D
+skinparam classFontColor #382A30
+skinparam packageBackgroundColor #F8F2EC
+skinparam packageBorderColor #D6C3BA
+skinparam componentBackgroundColor #FFFDFC
+skinparam componentBorderColor #B9939D
+skinparam stateBackgroundColor #FCF7F2
+skinparam stateBorderColor #B9939D
+skinparam sequenceLifeLineBorderColor #CBB7BA
+skinparam sequenceParticipantBackgroundColor #EFDFE2
+skinparam sequenceParticipantBorderColor #9B6574
+skinparam sequenceGroupBackgroundColor #FBF7F3
+skinparam sequenceGroupBorderColor #C6A6AF
+skinparam sequenceDividerBackgroundColor #EFDFE2
+skinparam noteBackgroundColor #F7EDDC
+skinparam noteBorderColor #CDBB9E
+
+actor 买家 as U
+boundary 商品详情页 as UI
+control 交易服务 as S
+database 数据库 as DB
+U -> UI : 确认价格，提交预约
+UI -> S : 商品、确认价格、版本、请求键
+S -> S : 校验身份与权限
+S -> DB : BEGIN；占用幂等键并比对请求摘要
+alt 同键同内容已完成
+ DB --> S : 原响应
+ S -> DB : 结束事务
+ S --> UI : 返回原预约
+else 新请求
+ S -> DB : 锁定商品行，读取最新状态与版本
+ alt 本人已有有效预约
+  S -> DB : 保存响应，COMMIT
+  S --> UI : 返回已有预约
+ else 状态不可约或价格版本过期
+  S -> DB : ROLLBACK
+  S --> UI : 说明原因，要求刷新确认
+ else 当前可预约
+  S -> DB : 新建预约与价格快照；占用商品
+  S -> DB : 商品转已预约；保存日志与幂等响应
+  alt 写入全部成功
+   S -> DB : COMMIT
+   S --> UI : 成功与预约编号
+  else 任一步失败
+   S -> DB : ROLLBACK
+   S --> UI : 失败，可安全重试
+  end
+ end
+end
+UI --> U : 展示结果
+note over S,DB
+幂等键按账号、操作类型、请求键联合唯一；同键异内容拒绝。
+不同买家竞争同一商品锁；有效占用表以商品编号为主键。
+end note
+@enduml

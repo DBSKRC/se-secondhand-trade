@@ -1,0 +1,56 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 16
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam ArrowColor #82515F
+skinparam LineColor #CBB7BA
+skinparam BorderColor #CBB7BA
+skinparam FontColor #382A30
+skinparam classBackgroundColor #FFFCF8
+skinparam classHeaderBackgroundColor #EFDFE2
+skinparam classBorderColor #B9939D
+skinparam classFontColor #382A30
+skinparam packageBackgroundColor #F8F2EC
+skinparam packageBorderColor #D6C3BA
+skinparam componentBackgroundColor #FFFDFC
+skinparam componentBorderColor #B9939D
+skinparam stateBackgroundColor #FCF7F2
+skinparam stateBorderColor #B9939D
+skinparam sequenceLifeLineBorderColor #CBB7BA
+skinparam sequenceParticipantBackgroundColor #EFDFE2
+skinparam sequenceParticipantBorderColor #9B6574
+skinparam sequenceGroupBackgroundColor #FBF7F3
+skinparam sequenceGroupBorderColor #C6A6AF
+skinparam sequenceDividerBackgroundColor #EFDFE2
+skinparam noteBackgroundColor #F7EDDC
+skinparam noteBorderColor #CDBB9E
+
+skinparam linetype ortho
+top to bottom direction
+[用户端 / 管理端] as UI
+[应用入口：认证、权限] as API
+package "业务模块（同一进程）" {
+ together {
+ [商品发布与查询] as I
+ [预约与交易] as R
+ }
+ together {
+ [审核、举报与争议] as M
+ [统计与日志] as A
+ }
+ R -right-> I
+ M -up-> I
+ M -up-> R
+ M -right-> A
+ R -down-> A
+}
+[仓储与事务管理] as Repo
+database PostgreSQL as DB
+folder 图片文件 as F
+UI --> API
+API --> "业务模块（同一进程）"
+"业务模块（同一进程）" --> Repo
+I --> F
+Repo --> DB
+@enduml
