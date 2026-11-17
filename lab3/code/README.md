@@ -2,6 +2,44 @@
 
 Python 3.11 及以上。运行时使用标准库和本机 SQLite。
 
+## 安卓版
+
+1. 在电脑的 `code` 目录双击 `启动校园拾光.cmd`。它会创建演示库并打开同一套浏览器界面。
+2. 在 Android Studio 启动模拟器，或用 USB 连接已开启调试的安卓手机。
+3. 从 `code` 运行安装脚本。脚本会安装 APK、建立本地转发并打开「校园拾光」。
+
+```powershell
+powershell -File android/install.ps1
+```
+
+也可用 Android SDK 的 ADB 手动安装和转发：
+
+```powershell
+adb install -r campus-market-debug.apk
+adb reverse tcp:8871 tcp:8871
+```
+
+安装需要 Android 8.0 或更高版本。手机端连接电脑上运行的后端，演示时需要保持后端和转发运行。
+重连设备后，重新执行转发命令。设备不止一个时，用 `adb -s 设备编号` 指定。
+演示账号为 `buyer`、`seller`、`moderator`，密码都是 `campus-demo-2026`。
+三种角色分别登录后，即可通过按钮完成发布、审核、预约、交付和确认。
+这些演示数据单独保存于 `data/visual-demo.db`。
+
+建立自己的空库时，运行 `python -m campus.mobile --open`，在「我的」初始化管理员再注册普通账号。
+
+### 构建 APK
+
+准备 JDK、Android SDK 平台 35 与 Build-Tools 35.0.0，再从 `code` 运行：
+
+```powershell
+powershell -File android/build.ps1 -SdkRoot "你的 SDK 路径" -JdkRoot "你的 JDK 路径"
+```
+
+安装包位于 `build/apk/campus-market-debug.apk`。脚本使用 AAPT2、javac、D8、zipalign 与 apksigner 构建并校验签名。
+客户端通过 WebView 显示本机后端提供的界面，使用同一套 Python 服务和 SQLite 数据库。
+
+## 命令行版
+
 ```powershell
 python -m campus --db data/market.sqlite3 --setup-admin moderator
 python -m campus --db data/market.sqlite3

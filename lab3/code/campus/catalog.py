@@ -286,7 +286,9 @@ class Catalog(commands.Service):
             rows = cx.execute(
                 f"""
                 SELECT id, seller_id, title, category, condition, price_cents,
-                       state, version, created_at
+                       state, version, created_at,
+                       (SELECT MIN(im.position) FROM item_images AS im
+                        WHERE im.item_id = items.id) AS cover_position
                 FROM items WHERE {where}
                 ORDER BY {orders[sort]} LIMIT ? OFFSET ?
                 """,

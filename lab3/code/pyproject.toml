@@ -10,12 +10,13 @@ requires-python = ">=3.11"
 
 [project.scripts]
 campus-market = "campus.__main__:main"
+campus-mobile = "campus.mobile:main"
 
 [tool.setuptools.packages.find]
 include = ["campus*"]
 
 [tool.setuptools.package-data]
-campus = ["schema.sql"]
+campus = ["schema.sql", "mobile_ui/*", "mobile_ui/assets/*"]
 
 [tool.pylint.main]
 py-version = "3.11"

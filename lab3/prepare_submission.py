@@ -6,7 +6,7 @@ import shutil
 import zipfile
 
 _NAME = "实验3_241220158_王能"
-_CODE_FILES = (".gitignore", "README.md", "pyproject.toml")
+_CODE_FILES = (".gitignore", "README.md", "pyproject.toml", "启动校园拾光.cmd")
 
 
 def collect(root):
@@ -19,12 +19,17 @@ def collect(root):
         yield code / name
     for folder, extensions in (
         ("campus", {".py", ".sql"}),
+        ("campus/mobile_ui", {".html", ".css", ".js"}),
+        ("campus/mobile_ui/assets", {".jpg", ".ttf", ".txt", ".md"}),
         ("tests", {".py"}),
         ("tools", {".py"}),
     ):
         for file in sorted((code / folder).iterdir()):
             if file.suffix in extensions and file.is_file():
                 yield file
+    for file in sorted((code / "android").rglob("*")):
+        if file.is_file() and file.suffix in {".java", ".xml", ".ps1"}:
+            yield file
 
 
 def prepare(root, output, report):
